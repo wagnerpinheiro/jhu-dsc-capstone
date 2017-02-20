@@ -1,0 +1,59 @@
+---
+title: "Quiz 1"
+output: html_notebook
+---
+
+1.
+```{r}
+file.info("data/final/en_US/en_US.blogs.txt")$size / 1024^2
+```
+
+2.
+```{r}
+twitter <- readLines("data/final/en_US/en_US.twitter.txt", skipNul = T)
+length(twitter)
+```
+
+3.
+```{r}
+blogs <- readLines("data/final/en_US/en_US.blogs.txt", skipNul = T)
+news <- readLines("data/final/en_US/en_US.news.txt", skipNul = T)
+
+```
+
+```{r}
+max(nchar(blogs))
+```
+
+```{r}
+max(nchar(news))
+```
+
+```{r}
+max(nchar(twitter))
+```
+
+
+4.
+
+```{r}
+love_count <- sum(grepl("love", twitter))
+hate_count <- sum(grepl("hate", twitter))
+love_count / hate_count
+```
+
+
+5.
+```{r}
+biostats <- grep("biostats", twitter)
+twitter[biostats]
+
+```
+
+
+6.
+```{r}
+sum(grepl("A computer once beat me at chess, but it was no match for me at kickboxing", twitter))
+```
+
+

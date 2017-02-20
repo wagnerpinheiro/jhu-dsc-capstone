@@ -1,0 +1,10 @@
+---
+title: "Data Science Capstone Project"
+author: Wagner Pinheiro
+date: February, 2017
+output: 
+  html_document: 
+    keep_md: yes
+---
+
+See [week2-milestone-report.md](week2-milestone-report.md) for a followup.
