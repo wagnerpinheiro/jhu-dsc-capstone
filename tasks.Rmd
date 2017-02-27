@@ -1,5 +1,5 @@
 ---
-title: "R Notebook"
+title: "Tasks - Draft NoteBook"
 output: html_notebook
 ---
 
@@ -14,15 +14,15 @@ source("./main.R")
 1. Profanity filtering - removing profanity and other words you do not want to predict.
 
 ```{r}
-#Sample 10000 
-twitterSample<-sample(twitter, 10000)
-twitterSample<- iconv(twitterSample, 'UTF-8', 'ASCII', "byte")
-
+# Sample 10000 
+# twitter_sample<-sample(twitter, 10000)
+# twitter_sample<- iconv(twitter_sample, 'UTF-8', 'ASCII', "byte")
+twitter_sample <- readLines("./data/final/en_US/en_US.twitter.txt", skipNul = T, n=10000)
 ```
 
 
 ```{r}
-doc.vec <- VectorSource(twitterSample)                      
+doc.vec <- VectorSource(twitter_sample)                      
 doc.corpus <- Corpus(doc.vec)
 #Convert to lower case
 doc.corpus <- tm_map(doc.corpus, tolower)
@@ -69,11 +69,13 @@ Some words are more frequent than others - what are the distributions of word fr
 1. Can you think of a way to increase the coverage -- identifying words that may not be in the corpora or using a smaller number of words in the dictionary to cover the same number of phrases?
 
 
-```{r}
+Not Working, reference only:
+```{r, eval=FALSE}
 BigramTokenizer <- function(x) {RWeka::NGramTokenizer(x, RWeka::Weka_control(min = 2, max = 2))}
 tdm <- TermDocumentMatrix(doc.corpus, control = list(tokenize = BigramTokenizer))
 # dtm <- DocumentTermMatrix(doc.corpus, control = list(tokenize = BigramTokenizer))
 inspect(tdm[1:10,1:10])
+## Not Working:  tentativa de criar uma tabela com mais de 2^31 elementos
 Gram.1 <- data.frame(table(tdm))
 tdm <- tdm[order(tdm$Freq, decreasing = TRUE),]
 colnames(Gram.1) <- c("Word", "Freq")
@@ -83,13 +85,45 @@ plot(tdm, terms = findFreqTerms(tdm, lowfreq = 2)[1:50], corThreshold = 0.5)
 ```
 
 ```{r}
-bigrams <- tokenize(char_tolower(twitterSample), removePunct = TRUE, ngrams = 2)
+bigrams <- tokenize(char_tolower(twitter_sample), removePunct = TRUE, ngrams = 2)
 my_dfm <- dfm(bigrams)
 freq <- colSums(my_dfm)
 gram <- data.frame(ngram=names(freq), count = freq)
 gram <- arrange(gram, desc(freq))
 gram[1:12,]
 ```
+
+
+```{r}
+my_dfm <- CAP.createDfm(twitter_sample, 3)
+topfeatures(my_dfm, 20)
+```
+
+### test 3: https://cran.r-project.org/web/packages/quanteda/vignettes/quickstart.html
+
+```{r}
+my_corpus <- corpus(twitter_sample)
+summary(my_corpus, n=5)
+# my_corpus[1,]
+# kwic(my_corpus, 'live')
+
+my_dfm <- dfm(my_corpus, remove = stopwords("english"), stem = TRUE, removePunct = TRUE)
+# my_dfm[1,]
+# my_dfm[1, 1:10]
+# my_dfm
+# topfeatures(my_dfm, 20)
+set.seed(20)
+textplot_wordcloud(dfm_trim(my_dfm, min_count = 3000))
+```
+
+
+```{r}
+textplot_wordcloud(my_dfm, min.freq = 2000, random.order = FALSE,
+                   rot.per = .25, 
+                   colors = RColorBrewer::brewer.pal(8,"Dark2"))
+
+```
+
 
 
 ### Task 3 - Modeling
@@ -110,6 +144,59 @@ Questions to consider
 1. How do you evaluate whether your model is any good?
 1. How can you use backoff models to estimate the probability of unobserved n-grams?
 
+The Second Edition of the 20-volume Oxford English Dictionary contains full entries for 171,476 words in current use, and 47,156 obsolete words. To this may be added around 9,500 derivative words included as subentries.
+
+So:
+
+```{r}
+max_words_en <- 171476 + 47156 + 9500
+max_lines_twitter_ds <- 2360148
+n_test <- c(10 ^ 3, 10 ^ 4 / 2, 10 ^ 4,  10 ^ 5 / 2, 10 ^ 5, 10 ^ 6 / 2, 10 ^ 6, -1)
+# n_test <- c(10 ^ 3, 10 ^ 4 / 2, 10 ^ 4,  10 ^ 5 / 2, 10 ^ 5)
+test_function <- function(n) {
+  twitter_sample <- readLines("./data/final/en_US/en_US.twitter.txt", skipNul = T, n=n)
+  c(count(CAP.ngramFreq(twitter_sample, 1)))
+}
+n_result <- unlist(sapply(n_test, test_function))
+
+test_function_mem_mean <- function(n) {
+  twitter_sample <- readLines("./data/final/en_US/en_US.twitter.txt", skipNul = T, n=n)
+  object.size(twitter_sample) / n
+}
+
+n_mem_mean_per_line <- mean(unlist(sapply(n_test[1:4], test_function_mem_mean)))
+  
+n_test_fixed <- n_test 
+n_test_fixed[8] <- max_lines_twitter_ds
+
+n_test_labels <- n_test_fixed
+n_test_labels
+
+df_test <- data.frame(lines=n_test_fixed, words=n_result, percent_lines=(n_test_fixed/max_lines_twitter_ds) * 100,
+                      percent_words=(n_result/max_words_en) * 100, mem=round(n_test_fixed * n_mem_mean_per_line / 1024 ^ 2, digits=2))
+
+df_test
+```
+```{r}
+library(scales)
+g1 <- ggplot(df_test, aes(x=lines, y=percent_words)) +
+  geom_point() + 
+  geom_smooth() +
+  xlab("lines") + 
+  ylab("unique words (%)")
+  # scale_x_continuous(labels=c("two", "five", "eight"))
+
+g2 <- ggplot(df_test, aes(x=lines, y=mem)) +
+  geom_point() + 
+  geom_smooth() +
+  xlab("lines") + 
+  ylab("Memory (MB)")
+
+
+multiplot(g1, g2, cols=2)
+```
+
+
 
 Hints, tips, and tricks
 
@@ -129,3 +216,119 @@ Here are a few tools that may be of use to you as you work on their algorithm:
 - Rprof(): this function runs the profiler in R that can be used to determine where bottlenecks in your function may exist. The profr package (available on CRAN) provides some additional tools for visualizing and summarizing profiling data.
 - gc(): this function runs the garbage collector to retrieve unused RAM for R. In the process it tells you how much memory is currently being used by R.- 
 There will likely be a tradeoff that you have to make in between size and runtime. For example, an algorithm that requires a lot of memory, may run faster, while a slower algorithm may require less memory. You will have to find the right balance between the two in order to provide a good experience to the user.
+
+## Task 4
+
+The goal of this exercise is to build and evaluate your first predictive model. You will use the n-gram and backoff models you built in previous tasks to build and evaluate your predictive model. The goal is to make the model efficient and accurate.
+
+Tasks to accomplish
+
+Build a predictive model based on the previous data modeling steps - you may combine the models in any way you think is appropriate.
+Evaluate the model for efficiency and accuracy - use timing software to evaluate the computational complexity of your model. Evaluate the model accuracy using different metrics like perplexity, accuracy at the first word, second word, and third word.
+
+Questions to consider
+
+How does the model perform for different choices of the parameters and size of the model?
+How much does the model slow down for the performance you gain?
+Does perplexity correlate with the other measures of accuracy?
+Can you reduce the size of the model (number of parameters) without reducing performance?
+
+```{r}
+refscores <- c(rep(NA, 4), -1, 1, rep(NA, 8))
+ws <- textmodel(ieDfm, refscores, model="wordscores", smooth=1)
+```
+
+draft 1:
+```{r, eval=F}
+corp_pred <- corpus(pred)
+dfm_pred <- dfm(corp_pred, remove = stopwords("english"), stem = TRUE, removePunct = TRUE)
+
+names(topfeatures(dfm_pred, 20))
+
+textstat_simil(my_dfm, c("live"), method = "cosine", 
+               margin = "features", 2)
+
+dfm_master <- dfm_pred + my_dfm
+textstat_simil(presDfm, "1985-Reagan", n = 5, margin = "documents")
+
+my_dfm_tm <- convert(my_dfm, to="tm")
+findAssocs(my_dfm_tm, c('breath', 'want', 'air', 'live'), c(0.5, 0.5, 0.5, 0.7))
+
+library(glmnet)
+model <- glmnet(my_dfm, target[train], family='binomial')
+
+my_tokens <- c('breath', 'want', 'air', 'live')
+tokens_predict <- c(my_tokens, names(topfeatures(my_dfm, 100)))
+
+nbfit <- textmodel_NB(my_dfm, tokens_predict)
+nbpred <- predict(nbfit, newdata = tokens_predict)
+
+topfeatures(my_dfm[, tokens_predict], 104)
+
+```
+
+draft 2:
+```{r, eval=F}
+doc.vec <- VectorSource(twitter_sample)                      
+doc.corpus <- Corpus(doc.vec)
+#Convert to lower case
+doc.corpus <- tm_map(doc.corpus, tolower)
+#Remove all punctuatins
+doc.corpus<- tm_map(doc.corpus, removePunctuation)
+#Remove all numbers 
+doc.corpus<- tm_map(doc.corpus, removeNumbers)
+##Remove whitespace
+doc.corpus <- tm_map(doc.corpus, stripWhitespace)
+doc.corpus <- tm_map(doc.corpus, removeWords, stopwords("english")) 
+doc.corpus <- tm_map(doc.corpus, stemDocument, language = "english")
+
+##Force everything back to plaintext document
+doc.corpus <- tm_map(doc.corpus, PlainTextDocument)
+findAssocs(doc.corpus, c('breath', 'want', 'air', 'live'), c(0.5, 0.5, 0.5, 0.7))
+```
+
+draft 3 - working (see CAP.predictProb):
+```{r, eval=FALSE}
+gram.model <- CAP.ngramFreq(twitter_sample, 3)
+gram.model
+
+pred <- "When you breathe, I want to be the air for you. I'll be there for you, I'd live and I'd"
+pred <- "The guy in front of me just bought a pound of bacon, a bouquet, and a case of"
+gram.3 <- CAP.ngramFreq(pred, 3)
+gram.2 <- CAP.ngramFreq(pred, 2)
+
+table(grepl(paste(gram.2$ngram, collapse = "|"), gram.model$ngram))
+
+filtered <- gram.model[grepl(paste(gram.2$ngram, collapse = "|"), gram.model$ngram),]
+filtered$last <- str_match(filtered$ngram, '.*_(.*)$')[,2]
+my_grep <- "beer|pretzels|soda|cheese"
+
+filtered <- filtered %>%
+  filter(grepl(my_grep, filtered$ngram)) %>%
+  group_by(last) %>%
+  summarise(last_freq=sum(freq)) %>%
+  arrange(desc(last_freq))
+
+ans <- filtered[grepl(my_grep, filtered$last),]
+ans
+
+```
+
+## Task 5
+
+So far you have used basic models to understand and predict words. In this next task, your goal is to use all the resources you have available to you (from the Data Science Specialization, resources on the web, or your own creativity) to improve the predictive accuracy while reducing computational runtime and model complexity (if you can). Be sure to hold out a test set to evaluate the new, more creative models you are building.
+
+Tasks to accomplish
+
+Explore new models and data to improve your predictive model.
+Evaluate your new predictions on both accuracy and efficiency.
+
+Questions to consider
+
+What are some alternative data sets you could consider using?
+What are ways in which the n-gram model may be inefficient?
+What are the most commonly missed n-grams? Can you think of a reason why they would be missed and fix that?
+What are some other things that other people have tried to improve their model?
+Can you estimate how uncertain you are about the words you are predicting?
+
+

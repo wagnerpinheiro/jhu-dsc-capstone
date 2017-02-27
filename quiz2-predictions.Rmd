@@ -1,0 +1,98 @@
+---
+title: "Quiz 2 - Predictions Test"
+output: html_notebook
+---
+
+```{r}
+source("main.R")
+twitter_sample <- twitterSample <- readLines("./data/final/en_US/en_US.twitter.txt", skipNul = T, n=10 ^ 5)
+```
+
+
+## 1
+```{r}
+pred <- "The guy in front of me just bought a pound of bacon, a bouquet, and a case of"
+prob <- c("beer", "pretzels", "soda", "cheese")
+CAP.predictProb(pred, prob, gram.model)
+```
+
+## 2 
+not pass
+answer = most
+```{r}
+pred <- "You're the reason why I smile everyday. Can you follow me please? It would mean the"
+prob <- c("universe","best", "most", "world")
+CAP.predictProb(pred, prob, gram.model)
+```
+
+## 3
+solution: happiest
+```{r}
+pred <- "Hey sunshine, can you follow me and make me the"
+prob <- c("smelliest","bluest","saddest","happiest")
+CAP.predictProb(pred, prob, gram.model)
+```
+
+## 4
+not pass
+answer = defense
+```{r}
+pred <- "Very early observations on the Bills game: Offense still struggling but the"
+prob <- c("defense","players","crowd","referees")
+CAP.predictProb(pred, prob, gram.model)
+```
+
+## 5
+```{r}
+pred <- "Go on a romantic date at the"
+prob <- c("mall","beach","grocery","movies")
+CAP.predictProb(pred, prob, gram.model)
+```
+
+## 6
+```{r}
+pred <- "Well I'm pretty sure my granny has some old bagpipes in her garage I'll dust them off and"
+prob <- c("horse","motorcycle","way","phone")
+CAP.predictProb(pred, prob, gram.model)
+```
+
+## 7
+```{r}
+pred <- "Ohhhhh #PointBreak is on tomorrow. Love that film and haven't seen it in quite some"
+prob <- c("thing","years","time","weeks")
+CAP.predictProb(pred, prob, gram.model)
+```
+
+## 8 
+not pass
+answer = fingers
+```{r}
+pred <- "After the ice bucket challenge Louis will push his long wet hair out of his eyes with his little"
+prob <- c("eyes","fingers","toes","ears")
+CAP.predictProb(pred, prob, gram.model)
+```
+
+## 9
+not pass
+answered = bad
+```{r}
+pred <- "Be grateful for the good times and keep the faith during the"
+prob <- c("bad","worse","hard","sad")
+CAP.predictProb(pred, prob, gram.model)
+```
+
+## 10
+not pass
+answered = callous
+```{r}
+pred <- "If this isn't the cutest thing you've ever seen, then you must be"
+prob <- c("callous","asleep","insane","insensitive")
+CAP.predictProb(pred, prob, gram.model)
+```
+
+
+
+
+
+
+

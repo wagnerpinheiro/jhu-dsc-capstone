@@ -126,3 +126,41 @@ CAP.wordcloud <- function(text, max.words=200){
             use.r.layout=FALSE, colors=brewer.pal(8, "Dark2"))
   
 }
+
+CAP.createDfm <- function(text, n=1){
+  ngrams <- tokenize(char_tolower(text), removePunct = TRUE, 
+                   removeNumbers = TRUE, removeTwitter=TRUE, 
+                   removeSymbols=TRUE, removeURL=TRUE, 
+                   removeSeparators=TRUE, ngrams = n)
+  dfm(ngrams, remove=stopwords("english"))
+}
+
+CAP.getTerms <- function(text){
+  tokenize(char_tolower(text), removePunct = TRUE, 
+                     removeNumbers = TRUE, removeTwitter=TRUE, 
+                     removeSymbols=TRUE, removeURL=TRUE, 
+                     removeSeparators=TRUE, ngrams = 1)
+}
+
+
+#'
+#'to-do: falta analizar o contexto
+CAP.predictProb <- function(text, prob, gram.model){
+  # gram.3 <- CAP.ngramFreq(pred, 3)
+  gram.2 <- CAP.ngramFreq(text, 2)
+  
+  # table(grepl(paste(gram.2$ngram, collapse = "|"), gram.model$ngram))
+  
+  filtered <- gram.model[grepl(paste(gram.2$ngram, collapse = "|"), gram.model$ngram),]
+  filtered$last <- str_match(filtered$ngram, '.*_(.*)$')[,2]
+  my_grep <- paste(prob, collapse = "|")
+  
+  filtered <- filtered %>%
+    filter(grepl(my_grep, filtered$ngram)) %>%
+    group_by(last) %>%
+    summarise(last_freq=sum(freq)) %>%
+    arrange(desc(last_freq))
+  
+  # filtered[grepl(my_grep, filtered$last),]
+  filtered[filtered$last %in% prob,]
+}
