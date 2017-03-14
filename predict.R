@@ -22,8 +22,9 @@ CAP.predictNext <- function(test_tokens, train_tokens){
   test_tokens <- selectFeatures(test_tokens, features(train_tokens))
 }
   
-
-twitter_sample <- twitterSample <- readLines("./data/final/en_US/en_US.twitter.txt", skipNul = T, n=10 ^ 5)
+# se usar 10 ^ 6 o treino de 2:3 ngrams custa quase 1GB de ram
+# melhor usar 10 ^ 5 para cada um dos datasets, fazer o dfm_trim, fazer o merge dos dfm e salvar o treino em um RDS
+twitter_sample <- twitterSample <- readLines("./data/final/en_US/en_US.twitter.txt", skipNul = T, n=10 ^ 5) 
 pred <- "The guy in front of me just bought a pound of bacon, a bouquet, and a case of"
 prob <- c("beer", "pretzels", "soda", "cheese")
 
@@ -51,8 +52,13 @@ train_tokens <- CAP.train(twitter_sample, 2:3)
 test_tokens <- CAP.train(pred, 1:2)
 
 train_tokens <- CAP.train(twitter_sample, 3)
-object.size(train_tokens) / 1024 ^ 2 
 test_tokens <- CAP.train(pred, 2)
+
+#fazendo o dfm_trim um sampe 10 ^ 6 reduz de 963 MB para 187 MB
+train_tokens <- dfm_trim(train_tokens, min_count=10, min_docfreq = 2)
+
+object.size(train_tokens) / 1024 ^ 2 
+
 names <- paste0(featnames(test_tokens), '_\\w')
 dfm2b <- dfm_select(train_tokens, names, "keep", valuetype = "regex")
 
@@ -65,6 +71,7 @@ topfeatures(dfm2b, 50)
 featnames(dfm2b)
 grep('case', featnames(dfm2b)) # penultima palavra
 grep('beer', featnames(dfm2b)) # resposta
+
 as.data.frame(dfm2b[, grep('case_beer', featnames(dfm2b))])
 
 
@@ -92,6 +99,7 @@ my_fcm
 my_fcm <- fcm(train_tokens)
 
 df <- as.data.frame(my_fcm[, featnames(test_tokens)])
+head(as.data.frame(my_fcm), 20)
 
 head(df)
 
