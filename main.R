@@ -1,6 +1,8 @@
+# before loading RWeka library.
 library(rJava)
 .jinit(parameters="-Xmx128g")
 options(mc.cores=1)
+
 suppressPackageStartupMessages(library(dplyr))
 suppressPackageStartupMessages(library(tidyr))
 suppressPackageStartupMessages(library(ggplot2))
