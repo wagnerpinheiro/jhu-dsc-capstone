@@ -1,0 +1,19 @@
+---
+title: "Test Predict"
+output: html_notebook
+---
+
+```{r, echo=FALSE}
+setwd("predict")
+suppressPackageStartupMessages(source("predict.R"))
+
+```
+
+```{r}
+predictnextword("The guy in front of me just bought a pound of bacon, a bouquet, and a case of")
+```
+
+```{r}
+predictnextword("You're the reason why I smile everyday. Can you follow me please? It would mean the")
+```
+
